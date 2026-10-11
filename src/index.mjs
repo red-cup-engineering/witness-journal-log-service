@@ -1,7 +1,7 @@
 // witness-journal-log-service — append-only journal custody.
 //
 // A witness journal is one date-partitioned, append-only JSONL file per
-// (feed, day): `<root>/data/logs/YYYY/MM/DD/<feed>.jsonl`. This is the
+// (feed, day): `<root>/data/logs/<feed>-logs/<date>-admit-<feed>.jsonl`. This is the
 // irreducible tier — the log is never a sufficient statistic of anything
 // else, everything else (state readouts, settled records) is a projection
 // of it. This module is the sole effectful membrane: the only file here that
@@ -22,6 +22,7 @@ import { randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
+import { journalPath } from "@red-cup-engineering/eavt-services-section/journal-path";
 import { canonical } from "@red-cup-engineering/json-file-codec-service";
 import { parse, serialize } from "@red-cup-engineering/json-file-codec-service/jsonl/eavt";
 import { asEntry, asSeavt, identifySeavtSemanticContent } from "@red-cup-engineering/witness-journal-entry-service";
@@ -41,8 +42,8 @@ function dateOf(at) {
 }
 
 /**
- * The dated journal path for one feed: `<root>/data/logs/YYYY/MM/DD/<feed>.jsonl`.
- * The date is derived from `at` (a witness-journal time value), not from the
+ * The dated journal path for one feed: `<root>/data/logs/<feed>-logs/<date>-admit-<feed>.jsonl`,
+ * addressed by the eavt-services-section tier law. The date is derived from `at` (a witness-journal time value), not from the
  * wall clock — replaying an old witness files it under the day it witnesses,
  * not the day it happens to be replayed.
  *
@@ -52,8 +53,7 @@ function dateOf(at) {
  * @returns {string}
  */
 export function logPathFor(root, feed, at) {
-  const [year, month, day] = dateOf(at).split("-");
-  return path.join(root, "data", "logs", year ?? "0000", month ?? "00", day ?? "00", `${feed}.jsonl`);
+  return journalPath({ root, feed, at });
 }
 
 /**

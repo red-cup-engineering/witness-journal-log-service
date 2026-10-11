@@ -20,6 +20,7 @@
     "verify": "npm run check && npm test"
   },
   "dependencies": {
+    "@red-cup-engineering/eavt-services-section": "workspace:*",
     "@red-cup-engineering/json-file-codec-service": "0.1.3",
     "@red-cup-engineering/witness-journal-entry-service": "workspace:*"
   }

@@ -29,10 +29,10 @@ function withTempRoot(fn) {
   }
 }
 
-test("logPathFor lays the journal under data/logs/YYYY/MM/DD/<feed>.jsonl", () => {
+test("logPathFor files the journal by kind under data/logs, the date leading the file's stem", () => {
   withTempRoot((root) => {
     const p = logPathFor(root, "agent-events", "2026-07-31T12:00:00.000Z");
-    assert.equal(p, path.join(root, "data", "logs", "2026", "07", "31", "agent-events.jsonl"));
+    assert.equal(p, path.join(root, "data", "logs", "agent-events-logs", "2026-07-31-admit-agent-events.jsonl"));
   });
 });
 
