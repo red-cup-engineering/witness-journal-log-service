@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, readFileSync } from "node:fs";
+import { mkdtempSync, rmSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -126,7 +126,7 @@ test("a missing journal reads as empty, not an error", () => {
   });
 });
 
-test("readJsonLinesAtPath reads generic JSON lines, skipping malformed ones", () => {
+test("readJsonLinesAtPath reads generic JSON lines without weakening their contents", () => {
   withTempRoot((root) => {
     const filePath = path.join(root, "raw.jsonl");
     writeEntriesAtomicAtPath(filePath, [entry("s", "p", "v", "t")]);
@@ -135,6 +135,29 @@ test("readJsonLinesAtPath reads generic JSON lines, skipping malformed ones", ()
     const rows = readJsonLinesAtPath(filePath);
     assert.equal(rows.length, 1);
     assert.deepEqual(rows[0], { e: "s", a: "p", v: "v", t: "t" });
+  });
+});
+
+test("unreadable present journals refuse rather than appear empty", () => {
+  withTempRoot((root) => {
+    const directory = path.join(root, "present-but-not-a-file");
+    mkdirSync(directory);
+    assert.throws(() => readEntriesAtPath(directory), error => error?.code === "EISDIR");
+    assert.throws(() => readJsonLinesAtPath(directory), error => error?.code === "EISDIR");
+    assert.throws(() => readSeavtAtPath(directory), error => error?.code === "EISDIR");
+    // A caller may still read an actually missing file as empty.
+    assert.deepEqual(readJsonLinesAtPath(path.join(root, "absent.jsonl")), []);
+  });
+});
+
+test("invalid JSONL refuses with the source line, preserving every surviving byte", () => {
+  withTempRoot((root) => {
+    const filePath = path.join(root, "source.jsonl");
+    const source = '{"record":1}\n{"broken":\n{"record":3}\n';
+    writeFileSync(filePath, source);
+    assert.throws(() => readJsonLinesAtPath(filePath), error =>
+      error instanceof SyntaxError && error.message.includes(filePath + ":2"));
+    assert.equal(readFileSync(filePath, "utf8"), source);
   });
 });
 
