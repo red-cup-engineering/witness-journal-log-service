@@ -35,7 +35,6 @@ export declare function logPathFor(root: string, feed: string, at: JsonValue): s
 export declare function readEntriesAtPath(filePath: string): WitnessJournalEntry[];
 export declare function readSeavtAtPath(filePath: string): Seavt[];
 export declare function readJsonLinesAtPath(filePath: string): JsonValue[];
-export declare function writeEntriesAtomicAtPath(filePath: string, entries: readonly unknown[]): void;
 export declare function appendEntries(
   root: string,
   feed: string,
