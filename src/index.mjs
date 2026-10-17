@@ -56,59 +56,45 @@ export function logPathFor(root, feed, at) {
   return journalPath({ root, feed, at });
 }
 
+/** Read an optional source file without conflating absence and read failure.
+ * A missing journal is empty; an unreadable/corrupt journal is NOT empty
+ * evidence and must never be overwritten by a recovery append. */
+function readOptionalJournalText(filePath) {
+  try { return readFileSync(filePath, "utf8"); }
+  catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 /**
- * Read one journal file's entries at an exact path, in append order. A
- * missing or unreadable file reads as the empty journal — the empty journal
- * is a first-class state, not an exceptional one.
- *
- * @param {string} filePath
- * @returns {WitnessJournalEntry[]}
+ * Read an exact journal. Only ENOENT is empty; a broken filesystem, an
+ * unreadable path, or malformed EAVT must refuse rather than mint absence.
  */
 export function readEntriesAtPath(filePath) {
-  let content;
-  try {
-    content = readFileSync(filePath, "utf8");
-  } catch {
-    return [];
-  }
-  return /** @type {WitnessJournalEntry[]} */ (parse(content));
+  const content = readOptionalJournalText(filePath);
+  return content === null ? [] : /** @type {WitnessJournalEntry[]} */ (parse(content));
 }
 
-/**
- * Read one journal file as strict SEAVT source rows. A present generic EAVT
- * row is refused rather than silently promoted into the semiotic source law.
- *
- * @param {string} filePath
- * @returns {Seavt[]}
- */
+/** Strict source-law reading over the same physical EAVT content. */
 export function readSeavtAtPath(filePath) {
-  return readEntriesAtPath(filePath).map((row) => asSeavt(row));
+  return readEntriesAtPath(filePath).map(row => asSeavt(row));
 }
 
 /**
- * Read any newline-delimited JSON at an exact path, one value per line,
- * skipping malformed lines. Unlike `readEntriesAtPath`, rows need not be
- * entry-shaped — this is the generic fallback reader for JSONL that predates
- * or otherwise does not conform to the entry law.
- *
- * @param {string} filePath
- * @returns {import("@red-cup-engineering/json-file-codec-service").JsonValue[]}
+ * Read generic JSONL at an exact path. Only an absent file returns empty.
+ * Every nonblank row must parse: skipping a malformed witness would make
+ * a partial ledger look complete. The refusal carries path/line, not bytes.
  */
 export function readJsonLinesAtPath(filePath) {
-  let content;
-  try {
-    content = readFileSync(filePath, "utf8");
-  } catch {
-    return [];
-  }
+  const content = readOptionalJournalText(filePath);
+  if (content === null) return [];
   const out = [];
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed.length === 0) continue;
-    try {
-      out.push(JSON.parse(trimmed));
-    } catch {
-      // A malformed line is absent from this reading.
+  for (const [index, line] of content.split("\n").entries()) {
+    if (line.trim() === "") continue;
+    try { out.push(JSON.parse(line)); }
+    catch {
+      throw new SyntaxError(`witness-journal: malformed JSONL at ${filePath}:${index + 1}`);
     }
   }
   return out;
