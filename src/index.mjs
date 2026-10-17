@@ -18,8 +18,7 @@
 //     or in the file; it is computed fresh every time the journal is read,
 //     from where each entry sits in that reading.
 
-import { randomUUID } from "node:crypto";
-import { appendFileSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { journalPath } from "@red-cup-engineering/eavt-services-section/journal-path";
@@ -98,30 +97,6 @@ export function readJsonLinesAtPath(filePath) {
     }
   }
   return out;
-}
-
-/**
- * Atomically write a journal file's full entry set at an exact path: write
- * to a sibling temp file, then rename over the target (atomic on POSIX), so
- * a crash mid-write never corrupts the live journal.
- *
- * @param {string} filePath
- * @param {readonly unknown[]} entries
- */
-export function writeEntriesAtomicAtPath(filePath, entries) {
-  const tmp = `${filePath}.${process.pid}.${randomUUID()}.tmp`;
-  mkdirSync(path.dirname(filePath), { recursive: true });
-  try {
-    writeFileSync(tmp, serialize(/** @type {any} */ (entries.map((row) => asEntry(row)))), "utf8");
-    renameSync(tmp, filePath);
-  } catch (error) {
-    try {
-      rmSync(tmp, { force: true });
-    } catch {
-      // Best-effort cleanup: preserve the original write/rename failure.
-    }
-    throw error;
-  }
 }
 
 /**
