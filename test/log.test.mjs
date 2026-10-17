@@ -12,7 +12,6 @@ import {
   readEntries,
   readEntriesAtPath,
   readJsonLinesAtPath,
-  writeEntriesAtomicAtPath,
   streamEntries,
   appendSeavt,
   readSeavt,
@@ -129,9 +128,8 @@ test("a missing journal reads as empty, not an error", () => {
 test("readJsonLinesAtPath reads generic JSON lines without weakening their contents", () => {
   withTempRoot((root) => {
     const filePath = path.join(root, "raw.jsonl");
-    writeEntriesAtomicAtPath(filePath, [entry("s", "p", "v", "t")]);
-    // writeEntriesAtomicAtPath writes entry-shaped rows; readJsonLinesAtPath
-    // must still read them back as generic JSON (no shape enforcement).
+    writeFileSync(filePath, JSON.stringify(entry("s", "p", "v", "t")) + "\n");
+    // Generic JSONL reads do not invent semantic identity.
     const rows = readJsonLinesAtPath(filePath);
     assert.equal(rows.length, 1);
     assert.deepEqual(rows[0], { e: "s", a: "p", v: "v", t: "t" });
@@ -158,23 +156,6 @@ test("invalid JSONL refuses with the source line, preserving every surviving byt
     assert.throws(() => readJsonLinesAtPath(filePath), error =>
       error instanceof SyntaxError && error.message.includes(filePath + ":2"));
     assert.equal(readFileSync(filePath, "utf8"), source);
-  });
-});
-
-test("writeEntriesAtomicAtPath fully replaces a journal file (used for settlement compaction)", () => {
-  withTempRoot((root) => {
-    const at = "2026-07-31T12:00:00.000Z";
-    appendEntries(
-      root,
-      "feed-e",
-      [entry("s1", "p", "v1", at), entry("s2", "p", "v2", at), entry("s3", "p", "v3", at)],
-      at,
-    );
-    const filePath = logPathFor(root, "feed-e", at);
-    const kept = [entry("s2", "p", "v2", at)];
-    writeEntriesAtomicAtPath(filePath, kept);
-    const after = readEntriesAtPath(filePath);
-    assert.deepEqual(after, kept);
   });
 });
 
