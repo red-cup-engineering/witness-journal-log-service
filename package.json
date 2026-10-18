@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Custodies strict SEAVT under typed v2 semantic identity with explicit feed/day custody and derived trace; generic JSON EAVT remains a non-semantic compatibility lane.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/red-cup-engineering/semiotic-computer-system-services-section.git",
+    "directory": "services/witness-journal-services-section/services/witness-journal-log-service"
+  },
   "exports": {
     ".": {
       "types": "./src/index.d.mts",
