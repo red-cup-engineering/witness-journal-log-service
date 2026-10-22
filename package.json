@@ -27,5 +27,10 @@
     "@red-cup-engineering/eavt-services-section": "workspace:*",
     "@red-cup-engineering/json-file-codec-service": "0.1.3",
     "@red-cup-engineering/witness-journal-entry-service": "workspace:*"
+  },
+  "license": "MIT",
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/561-group/.github/blob/main/TIPS.md"
   }
 }
