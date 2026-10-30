@@ -1,0 +1,26 @@
+{
+  "name": "@red-cup-engineering/witness-journal-log-service",
+  "version": "0.1.4",
+  "private": true,
+  "type": "module",
+  "description": "Custodies strict SEAVT under typed v2 semantic identity with explicit feed/day custody and derived trace; generic JSON EAVT remains a non-semantic compatibility lane.",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.mts",
+      "import": "./src/index.mjs"
+    }
+  },
+  "types": "./src/index.d.mts",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --check src/index.mjs",
+    "test": "node --test test/*.test.mjs",
+    "verify": "npm run check && npm test"
+  },
+  "dependencies": {
+    "@red-cup-engineering/json-file-codec-service": "workspace:*",
+    "@red-cup-engineering/witness-journal-entry-service": "workspace:*"
+  }
+}
